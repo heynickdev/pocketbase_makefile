@@ -11,7 +11,7 @@ SYSTEM_TEMPL := $(shell which templ)
 SYSTEM_AIR := $(shell which air)
 SYSTEM_WATCHMAN := $(shell which watchman)
 
-# executable commands
+# Executable commands
 GO_CMD := $(if $(SYSTEM_GO),$(SYSTEM_GO),go)
 BUN_CMD := $(if $(SYSTEM_BUN),$(SYSTEM_BUN),$(HOME_BUN_BIN))
 TEMPL_CMD := $(if $(SYSTEM_TEMPL),$(SYSTEM_TEMPL),templ)
@@ -109,7 +109,7 @@ check-deps:
 		fi \
 	fi
 
-	@# 5. Check Watchman (Added as requested)
+	@# 5. Check Watchman
 	@if [ -z "$(SYSTEM_WATCHMAN)" ]; then \
 		read -p "Watchman not found (required for Tailwind). Install it? (y/N): " ans; \
 		if [ "$${ans:-N}" = "y" ]; then \
@@ -119,7 +119,7 @@ check-deps:
 			elif command -v apt-get >/dev/null; then \
 				sudo apt-get update && sudo apt-get install -y watchman; \
 			else \
-				echo "Could not detect package manager (pacman/apt). Please install 'watchman' manually."; \
+				echo "Could not detect package manager. Please install 'watchman' manually."; \
 				exit 1; \
 			fi \
 		else \
@@ -136,7 +136,7 @@ check-tailwind:
 		printf "$(CHECK) Tailwind installed\n"; \
 	fi
 
-# Ensure .air.toml has the correct serve command
+# Ensure .air.toml uses 'serve' for PocketBase
 fix-air-config:
 	@if [ ! -f .air.toml ] || ! grep -q "full_bin" .air.toml; then \
 		make create-air-config; \
@@ -146,6 +146,8 @@ setup-go:
 	@printf "\n$(CYAN)Initializing Go Module$(RESET)\n"
 	@[ -f go.mod ] || $(GO_CMD) mod init $(PROJECT_NAME)
 	@$(GO_CMD) get github.com/a-h/templ
+	@# Auto-install PocketBase
+	@$(GO_CMD) get github.com/pocketbase/pocketbase
 	@printf "$(CHECK) Go module initialized\n"
 
 create-air-config:
@@ -155,6 +157,7 @@ create-air-config:
 	@printf '[build]\n' >> .air.toml
 	@printf '  cmd = "templ generate && go build -o ./tmp/main ./cmd/$(PROJECT_NAME)/main.go"\n' >> .air.toml
 	@printf '  bin = "./tmp/main"\n' >> .air.toml
+	@# IMPORTANT: PocketBase requires "serve" command
 	@printf '  full_bin = "./tmp/main serve --http=0.0.0.0:42069"\n' >> .air.toml
 	@printf '  include_ext = ["go", "tpl", "tmpl", "html", "templ"]\n' >> .air.toml
 	@printf '  exclude_dir = ["assets", "tmp", "vendor", "node_modules", "static", "pb_data"]\n' >> .air.toml
@@ -175,7 +178,8 @@ create-dirs:
 	@mkdir -p $(STATIC_DIR)/js $(STATIC_DIR)/css
 	@mkdir -p views/{components,layouts,pages}
 	@mkdir -p cmd/$(PROJECT_NAME)
-	@[ -f $(MAIN_GO) ] || printf "package main\n\nimport \"net/http\"\n\nfunc main() {\n\t// Simple blocking server so Air doesn't exit immediately\n\thttp.ListenAndServe(\":42069\", nil)\n}\n" > $(MAIN_GO)
+	@# Writes the specific PocketBase Main file you requested
+	@[ -f $(MAIN_GO) ] || printf "package main\n\nimport (\n\t\"log\"\n\t\"github.com/pocketbase/pocketbase\"\n)\n\nfunc main() {\n\tapp := pocketbase.New()\n\n\tif err := app.Start(); err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n" > $(MAIN_GO)
 	@printf "$(CHECK) Directories created\n"
 
 setup-tailwind:
