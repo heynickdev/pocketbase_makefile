@@ -32,6 +32,7 @@ CSS_OUTPUT := $(STATIC_DIR)/css/styles.css
 
 # Colors
 CYAN := \033[36m
+DIM := \033[2m
 RESET := \033[0m
 CHECK := ✓
 ARROW := →
@@ -39,7 +40,7 @@ ARROW := →
 # URLs
 ALPINE_URL := https://cdn.jsdelivr.net/npm/alpinejs@latest/dist/cdn.min.js
 
-.PHONY: dev build generate css clean help check-deps create-air-config init setup-go check-tailwind fix-air-config
+.PHONY: dev build generate css clean help check-deps create-air-config init setup-go check-tailwind fix-air-config create-dirs
 
 # -- Main Development --
 
@@ -175,12 +176,25 @@ create-air-config:
 
 create-dirs:
 	@printf "\n$(CYAN)Creating project structure$(RESET)\n"
-	@mkdir -p $(STATIC_DIR)/js $(STATIC_DIR)/css
+	@printf "$(DIM)────────────────────────────────────$(RESET)\n"
+	@mkdir -p $(STATIC_DIR)/js
+	@mkdir -p $(STATIC_DIR)/css
 	@mkdir -p views/{components,layouts,pages}
+	@mkdir -p internal/{handler,middleware,model,service,util}
 	@mkdir -p cmd/$(PROJECT_NAME)
-	@# Writes the specific PocketBase Main file you requested
+	@mkdir -p $(BUILD_DIR)
+	@# Create placeholder files
+	@echo "package handler" > internal/handler/handler.go
+	@echo "package middleware" > internal/middleware/middleware.go
+	@echo "package model" > internal/model/model.go
+	@echo "package service" > internal/service/service.go
+	@echo "package util" > internal/util/util.go
+	@echo "// Base layout component" > views/layouts/BaseLayout.templ
+	@echo "// Navigation component" > views/components/Navbar.templ
+	@echo "// Home page component" > views/pages/HomePage.templ
+	@# Create main.go with PocketBase setup (using printf for newline safety)
 	@[ -f $(MAIN_GO) ] || printf "package main\n\nimport (\n\t\"log\"\n\t\"github.com/pocketbase/pocketbase\"\n)\n\nfunc main() {\n\tapp := pocketbase.New()\n\n\tif err := app.Start(); err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n" > $(MAIN_GO)
-	@printf "$(CHECK) Directories created\n"
+	@printf "$(CHECK) Project structure created\n"
 
 setup-tailwind:
 	@printf "\n$(CYAN)Setting up Tailwind CSS$(RESET)\n"
