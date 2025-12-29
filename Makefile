@@ -167,9 +167,9 @@ create-air-config:
 	@printf '[log]\n' >> .air.toml
 	@printf '  time = false\n\n' >> .air.toml
 	@printf '[misc]\n' >> .air.toml
-	@printf '  clean_on_exit = true\n\n' >> .air.toml
+	@printf '  clean_on_exit = false\n\n' >> .air.toml
 	@printf '[proxy]\n' >> .air.toml
-	@printf '  enabled = true\n' >> .air.toml
+	@printf '  enabled = false\n' >> .air.toml
 	@printf '  proxy_port = 8090\n' >> .air.toml
 	@printf '  app_port = 42069\n' >> .air.toml
 	@printf "$(CHECK) .air.toml configured\n"
